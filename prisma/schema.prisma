@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  role      Role     @default(BUYER)
+  createdAt DateTime @default(now())
+
+  products  Product[]
+  orders    Order[]
+  reviews   Review[]
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  products Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  priceCents  Int
+  stock       Int      @default(0)
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+
+  sellerId    String
+  seller      User     @relation(fields: [sellerId], references: [id])
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+
+  orderItems  OrderItem[]
+  reviews     Review[]
+
+  @@index([categoryId])
+  @@index([sellerId])
+}
+
+model Order {
+  id         String      @id @default(cuid())
+  status     OrderStatus @default(PENDING)
+  totalCents Int
+  createdAt  DateTime    @default(now())
+
+  userId     String
+  user       User        @relation(fields: [userId], references: [id])
+  items      OrderItem[]
+}
+
+model OrderItem {
+  id             String  @id @default(cuid())
+  quantity       Int
+  unitPriceCents Int
+
+  orderId        String
+  order          Order   @relation(fields: [orderId], references: [id])
+  productId      String
+  product        Product @relation(fields: [productId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+}
