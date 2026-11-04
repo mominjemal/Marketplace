@@ -33,6 +33,7 @@ model User {
   products  Product[]
   orders    Order[]
   reviews   Review[]
+  cartItems CartItem[]
 }
 
 model Category {
@@ -58,6 +59,7 @@ model Product {
 
   orderItems  OrderItem[]
   reviews     Review[]
+  cartItems CartItem[]
 
   @@index([categoryId])
   @@index([sellerId])
@@ -108,4 +110,16 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  quantity  Int     @default(1)
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId]) // one row per product per user
 }
