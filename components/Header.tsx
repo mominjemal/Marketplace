@@ -29,6 +29,7 @@ export default function Header() {
     return (
         <header className="flex items-center justify-between border-b px-6 py-3">
             <Link href="/" className="text-xl font-bold">Marketplace</Link>
+            <Link href="/orders" className="hover:underline">Orders</Link>
             <Suspense fallback={<div />}>
                 <UserMenu />
             </Suspense>

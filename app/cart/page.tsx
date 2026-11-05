@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { setQuantity, removeFromCart } from "@/app/actions/cart";
+import { placeOrder } from "@/app/actions/checkout";
 
 function formatPrice(cents: number) {
     return `$${(cents / 100).toFixed(2)}`;
@@ -80,19 +81,32 @@ async function CartContents() {
 
             <div className="flex items-center justify-between border-t pt-4">
                 <p className="text-xl font-bold">Subtotal: {formatPrice(totalCents)}</p>
-                <button disabled className="rounded bg-yellow-400 px-6 py-2 font-semibold opacity-50">
-                    Checkout (coming next)
-                </button>
+                <form action={placeOrder}>
+                    <button className="rounded bg-yellow-400 px-6 py-2 font-semibold">
+                        Place order
+                    </button>
+                </form>
             </div>
         </div>
     );
 }
 
-export default function CartPage() {
+async function CartError({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+    const { error } = await searchParams;
+    if (!error) return null;
+    return <p className="mb-4 rounded bg-red-50 p-2 text-red-700">{error}</p>;
+}
+
+export default function CartPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ error?: string }>;
+}) {
     return (
         <main className="mx-auto max-w-4xl p-6">
             <h1 className="mb-6 text-3xl font-bold">Your cart</h1>
             <Suspense fallback={<p>Loading cart...</p>}>
+                <CartError searchParams={searchParams} />
                 <CartContents />
             </Suspense>
         </main>
