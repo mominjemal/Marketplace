@@ -97,11 +97,7 @@ async function CartError({ searchParams }: { searchParams: Promise<{ error?: str
     return <p className="mb-4 rounded bg-red-50 p-2 text-red-700">{error}</p>;
 }
 
-export default function CartPage({
-    searchParams,
-}: {
-    searchParams: Promise<{ error?: string }>;
-}) {
+export default function CartPage({ searchParams, }: { searchParams: Promise<{ error?: string }>; }) {
     return (
         <main className="mx-auto max-w-4xl p-6">
             <h1 className="mb-6 text-3xl font-bold">Your cart</h1>

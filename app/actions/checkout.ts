@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { createPaymentSession, cancelOrder } from "@/lib/orders";
 
 class CheckoutError extends Error { }
 
@@ -27,7 +28,6 @@ export async function placeOrder() {
             let totalCents = 0;
 
             for (const item of items) {
-                // Atomic: only decrements if enough stock is still there.
                 const result = await tx.product.updateMany({
                     where: { id: item.productId, stock: { gte: item.quantity } },
                     data: { stock: { decrement: item.quantity } },
@@ -48,7 +48,7 @@ export async function placeOrder() {
                         create: items.map((i) => ({
                             productId: i.productId,
                             quantity: i.quantity,
-                            unitPriceCents: i.product.priceCents, // price at time of purchase
+                            unitPriceCents: i.product.priceCents,
                         })),
                     },
                 },
@@ -66,5 +66,15 @@ export async function placeOrder() {
     }
 
     revalidatePath("/cart");
-    redirect(`/orders/${orderId}`);
+
+    let paymentUrl: string;
+    try {
+        paymentUrl = await createPaymentSession(orderId);
+    } catch (e) {
+        console.error(e);
+        await cancelOrder(orderId); // give the stock back
+        redirect("/cart?error=" + encodeURIComponent("Could not start payment. Please try again."));
+    }
+
+    redirect(paymentUrl);
 }
