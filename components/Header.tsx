@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import { Suspense } from "react";
 import { getCurrentUser } from "@/lib/auth";
@@ -9,17 +10,24 @@ async function UserMenu() {
     if (!user) {
         return (
             <div className="flex gap-4">
-                <Link href="/login" className="hover:underline">Log in</Link>
-                <Link href="/signup" className="hover:underline">Sign up</Link>
+                <Link href="/login">Log in</Link>
+                <Link href="/signup">Sign up</Link>
             </div>
         );
     }
 
     return (
         <div className="flex items-center gap-4">
+            <Link href="/orders">Orders</Link>
+
+            <Link href="/seller">
+                {user.role === "BUYER" ? "Sell" : "My products"}
+            </Link>
+
             <span>Hi, {user.name ?? user.email}</span>
+
             <form action={logout}>
-                <button className="hover:underline">Log out</button>
+                <button>Log out</button>
             </form>
         </div>
     );
@@ -28,8 +36,10 @@ async function UserMenu() {
 export default function Header() {
     return (
         <header className="flex items-center justify-between border-b px-6 py-3">
-            <Link href="/" className="text-xl font-bold">Marketplace</Link>
-            <Link href="/orders" className="hover:underline">Orders</Link>
+            <Link href="/" className="text-xl font-bold">
+                Marketplace
+            </Link>
+
             <Suspense fallback={<div />}>
                 <UserMenu />
             </Suspense>
