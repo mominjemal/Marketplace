@@ -15,9 +15,21 @@ export async function becomeSeller() {
     }
     redirect("/seller");
 }
+type ProductInput = {
+    title: string;
+    description: string;
+    priceCents: number;
+    stock: number;
+    categoryId: string;
+    imageUrl: string | null;
+};
+
+type ParseResult =
+    | { ok: true; data: ProductInput }
+    | { ok: false; error: string };
 
 // Validates the form. Never trust what the browser sends.
-async function parseProduct(formData: FormData) {
+async function parseProduct(formData: FormData): Promise<ParseResult> {
     const title = String(formData.get("title") ?? "").trim();
     const description = String(formData.get("description") ?? "").trim();
     const price = Number(formData.get("price"));
@@ -25,18 +37,27 @@ async function parseProduct(formData: FormData) {
     const categoryId = String(formData.get("categoryId") ?? "");
     const imageUrl = String(formData.get("imageUrl") ?? "").trim();
 
-    if (title.length < 3) return { error: "Title must be at least 3 characters." };
-    if (description.length < 10) return { error: "Description must be at least 10 characters." };
-    if (!Number.isFinite(price) || price < 0.5) return { error: "Price must be at least $0.50." };
-    if (!Number.isInteger(stock) || stock < 0) return { error: "Stock must be a whole number, 0 or more." };
+    if (title.length < 3) {
+        return { ok: false, error: "Title must be at least 3 characters." };
+    }
+    if (description.length < 10) {
+        return { ok: false, error: "Description must be at least 10 characters." };
+    }
+    if (!Number.isFinite(price) || price < 0.5) {
+        return { ok: false, error: "Price must be at least $0.50." };
+    }
+    if (!Number.isInteger(stock) || stock < 0) {
+        return { ok: false, error: "Stock must be a whole number, 0 or more." };
+    }
     if (imageUrl && !/^https?:\/\//.test(imageUrl)) {
-        return { error: "Image URL must start with http:// or https://" };
+        return { ok: false, error: "Image URL must start with http:// or https://" };
     }
 
     const category = await prisma.category.findUnique({ where: { id: categoryId } });
-    if (!category) return { error: "Please choose a category." };
+    if (!category) return { ok: false, error: "Please choose a category." };
 
     return {
+        ok: true,
         data: {
             title,
             description,
@@ -52,7 +73,7 @@ export async function createProduct(formData: FormData) {
     const user = await requireSeller();
 
     const parsed = await parseProduct(formData);
-    if ("error" in parsed) {
+    if (!parsed.ok) {
         redirect(`/seller/new?error=${encodeURIComponent(parsed.error)}`);
     }
 
@@ -67,8 +88,8 @@ export async function updateProduct(formData: FormData) {
     const productId = String(formData.get("productId") ?? "");
 
     const parsed = await parseProduct(formData);
-    if ("error" in parsed) {
-        redirect(`/seller/${productId}/edit?error=${encodeURIComponent(parsed.error)}`);
+    if (!parsed.ok) {
+        redirect(`/seller/new?error=${encodeURIComponent(parsed.error)}`);
     }
 
     // sellerId in the filter means you can only update your own product.
