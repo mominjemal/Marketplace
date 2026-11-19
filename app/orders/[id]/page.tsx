@@ -67,6 +67,13 @@ async function OrderDetail({
                         <p className="font-semibold">{item.product.title}</p>
                         <p className="text-sm text-gray-500">
                             {item.quantity} × {formatPrice(item.unitPriceCents)}
+                            {(order.status === "PAID" || order.status === "SHIPPED") && (
+                                <p className="text-sm">
+                                    {item.shippedAt
+                                        ? `Shipped ${item.shippedAt.toLocaleDateString()}`
+                                        : "Waiting for the seller to ship"}
+                                </p>
+                            )}
                         </p>
                     </div>
                     <p className="font-semibold">

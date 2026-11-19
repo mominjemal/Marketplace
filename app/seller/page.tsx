@@ -49,6 +49,12 @@ async function Dashboard({ searchParams }: { searchParams: SearchParams }) {
             >
                 + Add product
             </Link>
+            <Link
+                href="/seller/orders"
+                className="inline-block rounded border px-4 py-2 font-semibold hover:bg-gray-100"
+            >
+                Orders to ship
+            </Link>
 
             {products.length === 0 ? (
                 <p>You haven&apos;t listed anything yet.</p>

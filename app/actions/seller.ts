@@ -110,3 +110,47 @@ export async function deleteProduct(formData: FormData) {
     revalidatePath("/");
     redirect("/seller");
 }
+
+export async function markShipped(formData: FormData) {
+    const user = await requireSeller();
+    const orderItemId = String(formData.get("orderItemId") ?? "");
+
+    await prisma.$transaction(async (tx) => {
+        // Only your own item, in a paid order, that hasn't shipped yet.
+        const item = await tx.orderItem.findFirst({
+            where: {
+                id: orderItemId,
+                shippedAt: null,
+                product: { sellerId: user.id },
+                order: { status: "PAID" },
+            },
+        });
+        if (!item) return;
+
+        // Lock the order row so two sellers shipping the last items at the same
+        // moment can't both think the other one is still pending.
+        await tx.order.updateMany({
+            where: { id: item.orderId, status: "PAID" },
+            data: { status: "PAID" },
+        });
+
+        await tx.orderItem.updateMany({
+            where: { id: item.id, shippedAt: null },
+            data: { shippedAt: new Date() },
+        });
+
+        const remaining = await tx.orderItem.count({
+            where: { orderId: item.orderId, shippedAt: null },
+        });
+
+        if (remaining === 0) {
+            await tx.order.update({
+                where: { id: item.orderId },
+                data: { status: "SHIPPED" },
+            });
+        }
+    });
+
+    revalidatePath("/seller/orders");
+    redirect("/seller/orders");
+}
